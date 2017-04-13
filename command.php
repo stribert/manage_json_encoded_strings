@@ -9,11 +9,14 @@ if ( ! class_exists( 'WP_CLI' ) ) {
  *
  * ## EXAMPLES
  *
+ * # Find a string
+ * $ wp mjson search "http://example.com"
+ *
  * # Replace a string
- * $ wp rjson replace "http://example1.com" "https://example2.com"
+ * $ wp mjson replace "http://example1.com" "https://example2.com"
  *
  * # Replace a string in a spesific table with db prefix
- * $ wp rjson replace "http://example1.com" "https://example2.com" --prefix="mysite_" --table="wp_postmeta" --column="meta_value" --primary="meta_id"
+ * $ wp mjson replace "http://example1.com" "https://example2.com" --prefix="mysite_" --table="wp_postmeta" --column="meta_value" --primary="meta_id"
  *
  */
 class Json_Strings extends WP_CLI_Command {
@@ -33,7 +36,7 @@ class Json_Strings extends WP_CLI_Command {
     *
     * ## EXAMPLES
     *
-    *      wp rjson version --format json
+    *      wp mjson version --format json
     *
     * @return void
     */
@@ -78,10 +81,10 @@ class Json_Strings extends WP_CLI_Command {
     * : Set primary key. Default: meta_id
     *
     * # Replace a string
-    * $ wp rjson replace "http://example1.com" "https://example2.com"
+    * $ wp mjson replace "http://example1.com" "https://example2.com"
     *
     * # Replace a string in a spesific table with db prefix
-    * $ wp rjson replace "http://example1.com" "https://example2.com" --prefix="mysite_" --table="wp_postmeta" --column="meta_value" --primary="meta_id"
+    * $ wp mjson replace "http://example1.com" "https://example2.com" --prefix="mysite_" --table="wp_postmeta" --column="meta_value" --primary="meta_id"
     *
     * @param array $args
     * @param array $assoc_args
@@ -141,6 +144,92 @@ class Json_Strings extends WP_CLI_Command {
         wp_CLI::line();
     }
 
+    /**
+    * Find json encoded strings in the database
+    *
+    * ## OPTIONS
+    *
+    * <search>
+    * : The string to search for
+    *
+    * [--prefix=<format>]
+    * : Set database prefix. Default: '' (No prefix)
+    *
+    * [--table=<format>]
+    * : Set table to search. Default: wp_postmeta
+    *
+    * [--column=<format>]
+    * : Set column to search. Default: meta_value
+    *
+    * [--primary=<format>]
+    * : Set primary key. Default: meta_id
+    *
+    * # Find a string
+    * $ wp mjson search "http://example1.com"
+    *
+    * # Find a string in a spesific table with db prefix
+    * $ wp mjson search "http://example1.com" --prefix="mysite_" --table="wp_postmeta" --column="meta_value" --primary="meta_id"
+    *
+    * @param array $args
+    * @param array $assoc_args
+    *
+    * @return void
+    */
+    public function search( $args, $assoc_args ) {
+        global $wpdb;
+
+        $prefix = '';
+        if( array_key_exists( 'prefix', $assoc_args ) ) {
+            $prefix = $assoc_args['prefix'];
+        }
+        $table = $prefix.'wp_postmeta';
+        if( array_key_exists( 'table', $assoc_args ) ) {
+            $table = $prefix.$assoc_args['table'];
+        }
+        $column = 'meta_value';
+        if( array_key_exists( 'column', $assoc_args ) ) {
+            $column = $assoc_args['column'];
+        }
+        $search_string = array_shift( $args );
+        $meta_keys = array();
+        $total_count = 0;
+        WP_CLI::line();
+        WP_CLI::log( sprintf(
+            '%10s: %s',
+            'Find',
+            WP_CLI::colorize( '%W'.$search_string.'%n' )));
+        WP_CLI::log( sprintf(
+            '%10s: %s',
+            'Prefix',
+            WP_CLI::colorize( '%W'.$prefix.'%n' )));
+        WP_CLI::log( sprintf(
+            '%10s: %s',
+            'Table',
+            WP_CLI::colorize( '%W'.$table.'%n' )));
+        WP_CLI::log( sprintf(
+            '%10s: %s',
+            'Column',
+            WP_CLI::colorize( '%W'.$column.'%n' )));
+        /*
+         * Query database
+         */
+        $search = $this->_json_encode($search_string);
+        $results = $this->_search($search, $table, $column);
+        $num = count($results);
+        WP_CLI::log( sprintf(
+            '%10s: %s',
+            'Found',
+            WP_CLI::colorize( '%W'."$num results".':%n' )));
+        WP_CLI::line();
+        foreach( $results as $res ) {
+            $start = strpos($res->$column, $search) - 30;
+            $length = strlen($search) + 74;
+            $result_cut = '...'.substr($res->$column, $start, 74).'...';
+            WP_CLI::log( $result_cut );
+        }
+        WP_CLI::line();
+    }
+
     private function _search($search, $table, $column) {
         global $wpdb;
 
@@ -149,21 +238,11 @@ class Json_Strings extends WP_CLI_Command {
         if( strpos( $search, $esc_char ) ) {
             return False;
         }
-        WP_CLI::log( "" );
-        WP_CLI::log( sprintf(
-            'Searching for: %s',
-            WP_CLI::colorize( '%W'.$search.'%n' )));
         $meta_key = '%'.$search.'%';
         $query =  $wpdb->prepare(
             "SELECT * FROM {$table} WHERE {$column} LIKE %s ESCAPE %s",
             $meta_key, $esc_char );
-        WP_CLI::log( sprintf(
-            'Query: %s',
-            WP_CLI::colorize( '%W'.$query.'%n' )));
         $results = $wpdb->get_results( $query );
-        WP_CLI::log( sprintf(
-            'Found %d records',
-            WP_CLI::colorize( count($results) )));
         return $results;
     }
 
@@ -213,4 +292,4 @@ class Json_Strings extends WP_CLI_Command {
         return array($meta_keys, $total_count);
     }
 }
-WP_CLI::add_command( 'rjson', 'Json_Strings' );
+WP_CLI::add_command( 'mjson', 'Json_Strings' );
