@@ -1,0 +1,19 @@
+{
+    "name": "dalom/manage_json_encoded_strings",
+    "description": "Manage json encoded strings in database",
+    "type": "wp-cli-package",
+    "homepage": "https://dalom.no",
+    "license": "MIT",
+    "authors": [],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "files": [ "command.php" ]
+    },
+    "require": {
+        "wp-cli/wp-cli": "^1.1.0"
+    },
+    "require-dev": {
+        "behat/behat": "~2.5"
+    }
+}
