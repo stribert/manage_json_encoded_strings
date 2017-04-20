@@ -96,11 +96,11 @@ class Json_Strings extends WP_CLI_Command {
 
         $prefix = '';
         if( array_key_exists( 'prefix', $assoc_args ) ) {
-            $table = $assoc_args['prefix'];
+            $prefix = $assoc_args['prefix'];
         }
         $table = $prefix.'wp_postmeta';
         if( array_key_exists( 'table', $assoc_args ) ) {
-            $table = $assoc_args['table'];
+            $table = $prefix.$assoc_args['table'];
         }
         $column = 'meta_value';
         if( array_key_exists( 'column', $assoc_args ) ) {
@@ -131,7 +131,7 @@ class Json_Strings extends WP_CLI_Command {
         /*
          * Query database
          */
-        list($meta_keys, $replace_count) = $this->_replace($search_string, $replace_string, $table, $column, $primary_key, $json=true);
+        list($meta_keys, $replace_count) = $this->_replace($search_string, $replace_string, $table, $column, $primary_key);
         $total_count += $replace_count;
         foreach( $meta_keys as $key => $key_count ) {
             WP_CLI::log( sprintf('  %-40s: %3d times', $key, $key_count) );
@@ -254,16 +254,14 @@ class Json_Strings extends WP_CLI_Command {
         return $text;
     }
 
-    private function _replace($search, $replace, $table, $column, $primary_key, $json=false) {
+    private function _replace($search, $replace, $table, $column, $primary_key) {
         global $wpdb;
 
         $meta_keys = array();
         $total_count = 0;
 
-        if( $json === true ) {
-            $search = $this->_json_encode($search);
-            $replace = $this->_json_encode($replace);
-        }
+        $search = $this->_json_encode($search);
+        $replace = $this->_json_encode($replace);
 
         $results = $this->_search($search, $table, $column);
 
