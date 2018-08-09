@@ -4,14 +4,20 @@
     "type": "wp-cli-package",
     "homepage": "https://dalom.no",
     "license": "MIT",
-    "authors": [],
+    "authors": [
+        {
+            "name": "daLom AS",
+            "email": "post@dalom.no",
+            "homepage": "https://dalom.no"
+        }
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true,
     "autoload": {
         "files": [ "command.php" ]
     },
     "require": {
-        "wp-cli/wp-cli": "^1.1.0"
+        "php": ">=5.3.29"
     },
     "require-dev": {
         "behat/behat": "~2.5"
